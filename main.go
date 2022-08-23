@@ -28,5 +28,12 @@ func main() {
 		ctx.String(http.StatusOK, "New POST request success")
 	})
 
+	router.GET("/employees/:username/*rest", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{
+			"username": ctx.Param("username"),
+			"rest":     ctx.Param("rest"),
+		})
+	})
+
 	log.Fatal(router.Run(":3000"))
 }
