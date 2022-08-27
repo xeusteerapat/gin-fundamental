@@ -8,18 +8,35 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
 // go:embed public
 var f embed.FS
 
 type TimeoffRequest struct {
-	Date   time.Time `json:"date" form:"date" binding:"-" time_format:"2006-01-02"`
-	Amount float64   `json:"amount" form:"amount" binding:"-"`
+	Date   time.Time `json:"date" form:"date" binding:"required,future" time_format:"2006-01-02"`
+	Amount float64   `json:"amount" form:"amount" binding:"required,gt=0"`
+}
+
+var ValidatorFutureDate validator.Func = func(fl validator.FieldLevel) bool {
+	date, ok := fl.Field().Interface().(time.Time)
+
+	if ok {
+		return date.After(time.Now())
+	}
+
+	return true
 }
 
 func main() {
 	router := gin.Default()
+
+	// Binding validator
+	if value, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		value.RegisterValidation("future", ValidatorFutureDate)
+	}
 
 	// Serving static files
 	router.StaticFile("/", "./public/index.html")
