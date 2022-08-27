@@ -13,6 +13,11 @@ import (
 // go:embed public
 var f embed.FS
 
+type TimeoffRequest struct {
+	Date   time.Time `json:"date" form:"date" binding:"-" time_format:"2006-01-02"`
+	Amount float64   `json:"amount" form:"amount" binding:"-"`
+}
+
 func main() {
 	router := gin.Default()
 
@@ -30,15 +35,17 @@ func main() {
 
 	// POST mothod, receive data from Form input
 	router.POST("/employees", func(ctx *gin.Context) {
-		date := ctx.PostForm("date")
-		amount := ctx.PostForm("amount")
-		username := ctx.DefaultPostForm("username", "Teerapat")
+		var timeoffRequest TimeoffRequest
 
-		ctx.IndentedJSON(http.StatusOK, gin.H{
-			"date":     date,
-			"amount":   amount,
-			"username": username,
-		})
+		if err := ctx.ShouldBind(&timeoffRequest); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		ctx.JSON(http.StatusOK, timeoffRequest)
 	})
 
 	router.GET("/employees/:username/*rest", func(ctx *gin.Context) {
@@ -88,6 +95,21 @@ func main() {
 			"year":     year,
 			"months":   months,
 		})
+	})
+
+	apiGroup := router.Group("/api")
+	apiGroup.POST("/timeoff", func(ctx *gin.Context) {
+		var timeoffRequest TimeoffRequest
+
+		if err := ctx.ShouldBind(&timeoffRequest); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+
+			return
+		}
+
+		ctx.JSON(http.StatusOK, timeoffRequest)
 	})
 
 	log.Fatal(router.Run(":3000"))
