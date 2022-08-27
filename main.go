@@ -14,12 +14,14 @@ var f embed.FS
 func main() {
 	router := gin.Default()
 
+	// Serving static files
 	router.StaticFile("/", "./public/index.html")
 
 	router.Static("/public", "./public")
 
 	router.StaticFS("/fs", http.FileSystem(http.FS(f)))
 
+	// Route params
 	router.GET("/employees", func(ctx *gin.Context) {
 		ctx.File("./public/employee.html")
 	})
@@ -35,5 +37,33 @@ func main() {
 		})
 	})
 
-	log.Fatal(router.Run(":3000"))
+	// Routing Groups
+	// adminGroup := router.Group("/admin")
+
+	// adminGroup.GET("/users", func(ctx *gin.Context) {
+	// 	ctx.String(http.StatusOK, "Users Admin page")
+	// })
+
+	// adminGroup.GET("/users", func(ctx *gin.Context) {
+	// 	ctx.String(http.StatusOK, "Roles Admin page")
+	// })
+
+	// adminGroup.GET("/users", func(ctx *gin.Context) {
+	// 	ctx.String(http.StatusOK, "Policies Admin page")
+	// })
+
+	// Request objects
+	router.GET("/request-object", func(ctx *gin.Context) {
+		url := ctx.Request.URL.String()
+		headers := ctx.Request.Header
+		cookies := ctx.Request.Cookies()
+
+		ctx.IndentedJSON(http.StatusOK, gin.H{
+			"url":     url,
+			"headers": headers,
+			"cookies": cookies,
+		})
+	})
+
+	log.Fatal(router.Run(":3000 🎉"))
 }
