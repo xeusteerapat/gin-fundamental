@@ -2,8 +2,10 @@ package main
 
 import (
 	"embed"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -127,6 +129,46 @@ func main() {
 		}
 
 		ctx.JSON(http.StatusOK, timeoffRequest)
+	})
+
+	router.StaticFile("/download", "./public/download.html")
+	router.GET("/arsenal", func(ctx *gin.Context) {
+		// ctx.File("./arsenal.txt") // render arsenal text content
+
+		f, err := os.Open("./arsenal.txt")
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
+
+		defer f.Close()
+
+		data, err := io.ReadAll(f)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
+
+		ctx.Data(http.StatusOK, "text/plain", data)
+	})
+
+	// Get file stats and download the file
+	router.GET("/teerapat", func(ctx *gin.Context) {
+		// ctx.File("./teerapat.txt") // render teerapat.txt
+
+		f, err := os.Open("./teerapat.txt")
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
+
+		defer f.Close()
+
+		fStats, err := f.Stat()
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
+
+		ctx.DataFromReader(http.StatusOK, fStats.Size(), "text/plain", f, map[string]string{
+			"Content-Disposition": "attachment;filename=teerapat.txt",
+		})
 	})
 
 	log.Fatal(router.Run(":3000"))
