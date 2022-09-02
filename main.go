@@ -171,5 +171,31 @@ func main() {
 		})
 	})
 
+	// Streaning data
+	router.GET("/stream", func(ctx *gin.Context) {
+		f, err := os.Open("./arsenal.txt")
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
+
+		defer f.Close()
+		ctx.Stream(streamer(f))
+	})
+
 	log.Fatal(router.Run(":3000"))
+}
+
+func streamer(r io.Reader) func(io.Writer) bool {
+	return func(step io.Writer) bool {
+		for {
+			buf := make([]byte, 4*2^10)
+			if _, err := r.Read(buf); err == nil {
+				_, err := step.Write(buf)
+
+				return err == nil
+			} else {
+				return false
+			}
+		}
+	}
 }
