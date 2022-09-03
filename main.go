@@ -217,6 +217,26 @@ func registerTemplateRoute(r *gin.Engine) {
 			ctx.HTML(http.StatusOK, "employee.tmpl", *foundEmployee)
 		}
 	})
+
+	r.POST("/employee-template/:emloyeeID", func(ctx *gin.Context) {
+		var timeoff employee.TimeOff
+		err := ctx.ShouldBind(&timeoff)
+
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		timeoff.Type = employee.TimeoffTypePTO
+		timeoff.Status = employee.TimeoffStatusRequested
+
+		emloyeeID := ctx.Param("emloyeeID")
+		if foundEmployee, ok := getEmployeeByID(ctx, emloyeeID); ok {
+			foundEmployee.TimeOff = append(foundEmployee.TimeOff, timeoff)
+			ctx.Redirect(http.StatusFound, "/employee-template/"+emloyeeID)
+		}
+
+	})
 }
 
 func getEmployeeByID(ctx *gin.Context, employeeID string) (*employee.Employee, bool) {
