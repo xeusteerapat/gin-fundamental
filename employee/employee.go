@@ -13,7 +13,7 @@ type Employee struct {
 	Position  string
 	TotalPTO  float32
 	Status    string
-	Timeoff   []TimeOff
+	TimeOff   []TimeOff
 }
 
 type TimeOff struct {
