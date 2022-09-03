@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/xeusteerapat/gin-fundamental/employee"
 )
 
 // go:embed public
@@ -182,6 +183,10 @@ func main() {
 		ctx.Stream(streamer(f))
 	})
 
+	// Using template
+	router.LoadHTMLGlob("./templates/*")
+	registerTemplateRoute(router)
+
 	log.Fatal(router.Run(":3000"))
 }
 
@@ -198,4 +203,35 @@ func streamer(r io.Reader) func(io.Writer) bool {
 			}
 		}
 	}
+}
+
+func registerTemplateRoute(r *gin.Engine) {
+	r.GET("/employee-template", func(ctx *gin.Context) {
+		ctx.HTML(http.StatusOK, "index.tmpl", employee.GetAll())
+	})
+
+	r.GET("/employee-template/:emloyeeID", func(ctx *gin.Context) {
+		emloyeeID := ctx.Param("emloyeeID")
+
+		if foundEmployee, ok := getEmployeeByID(ctx, emloyeeID); ok {
+			ctx.HTML(http.StatusOK, "employee.tmpl", *foundEmployee)
+		}
+	})
+}
+
+func getEmployeeByID(ctx *gin.Context, employeeID string) (*employee.Employee, bool) {
+	employeeIDInt, err := strconv.Atoi(employeeID)
+
+	if err != nil {
+		ctx.AbortWithStatus((http.StatusNotFound))
+		return nil, false
+	}
+
+	foundEmployee, err := employee.Get(employeeIDInt)
+	if err != nil {
+		ctx.AbortWithStatus((http.StatusInternalServerError))
+		return nil, false
+	}
+
+	return foundEmployee, true
 }
