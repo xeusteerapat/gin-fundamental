@@ -235,7 +235,41 @@ func registerTemplateRoute(r *gin.Engine) {
 			foundEmployee.TimeOff = append(foundEmployee.TimeOff, timeoff)
 			ctx.Redirect(http.StatusFound, "/employee-template/"+emloyeeID)
 		}
+	})
 
+	// JSON data
+	g := r.Group("/api/json-employees")
+
+	g.GET("/", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, employee.GetAll())
+	})
+
+	g.GET("/:emloyeeID", func(ctx *gin.Context) {
+		emloyeeID := ctx.Param("emloyeeID")
+
+		if foundEmployee, ok := getEmployeeByID(ctx, emloyeeID); ok {
+			ctx.JSON(http.StatusOK, *foundEmployee)
+		}
+	})
+
+	g.POST("/:emloyeeID", func(ctx *gin.Context) {
+		var timeoff employee.TimeOff
+		err := ctx.ShouldBindJSON(&timeoff)
+
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		timeoff.Type = employee.TimeoffTypePTO
+		timeoff.Status = employee.TimeoffStatusRequested
+
+		emloyeeID := ctx.Param("emloyeeID")
+		if foundEmployee, ok := getEmployeeByID(ctx, emloyeeID); ok {
+			foundEmployee.TimeOff = append(foundEmployee.TimeOff, timeoff)
+
+			ctx.JSON(http.StatusOK, *foundEmployee)
+		}
 	})
 }
 
