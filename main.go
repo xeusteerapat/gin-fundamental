@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -35,6 +36,7 @@ var ValidatorFutureDate validator.Func = func(fl validator.FieldLevel) bool {
 
 func main() {
 	router := gin.Default()
+	router.Use(ErrorMiddleware)
 
 	// Binding validator
 	if value, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -271,6 +273,16 @@ func registerTemplateRoute(r *gin.Engine) {
 			ctx.JSON(http.StatusOK, *foundEmployee)
 		}
 	})
+
+	r.GET("/errors", func(ctx *gin.Context) {
+		err := &gin.Error{
+			Err:  errors.New("Something wrong"),
+			Type: gin.ErrorTypeRender | gin.ErrorTypePublic,
+			Meta: "This error was intentional",
+		}
+
+		ctx.Error(err)
+	})
 }
 
 func getEmployeeByID(ctx *gin.Context, employeeID string) (*employee.Employee, bool) {
@@ -297,4 +309,16 @@ var Benchmark gin.HandlerFunc = func(ctx *gin.Context) {
 
 	elapsed := time.Since(t)
 	log.Print("Time to process:", elapsed)
+}
+
+var ErrorMiddleware gin.HandlerFunc = func(ctx *gin.Context) {
+	ctx.Next()
+
+	for _, err := range ctx.Errors {
+		log.Print(map[string]any{
+			"Err":      err.Error(),
+			"Type":     err.Type,
+			"Metadata": err.Meta,
+		})
+	}
 }
