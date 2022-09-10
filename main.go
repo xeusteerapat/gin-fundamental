@@ -238,7 +238,7 @@ func registerTemplateRoute(r *gin.Engine) {
 	})
 
 	// JSON data
-	g := r.Group("/api/json-employees")
+	g := r.Group("/api/json-employees", Benchmark)
 
 	g.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, employee.GetAll())
@@ -288,4 +288,13 @@ func getEmployeeByID(ctx *gin.Context, employeeID string) (*employee.Employee, b
 	}
 
 	return foundEmployee, true
+}
+
+var Benchmark gin.HandlerFunc = func(ctx *gin.Context) {
+	t := time.Now()
+
+	ctx.Next()
+
+	elapsed := time.Since(t)
+	log.Print("Time to process:", elapsed)
 }
